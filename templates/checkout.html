@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout</title>
+    
+    <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+</head>
+<body>
+    <h1>Checkout</h1>
+    
+    <h2>Cart:</h2>
+    <ul>
+        {% for product in cart_products %}
+            <li>{{ product.name }} - {{ product.description }} - ${{ product.price }}</li>
+        {% endfor %}
+    </ul>
+    <p>Total Price: ${{ total_price }}</p>
+
+    <div style="text-align: center;">
+        <!-- Checkout form -->
+        <form id="checkout-form">
+            <label for="user-email">Your Email:</label>
+            <input type="email" id="user-email" name="user-email" required>
+            <button type="button" id="checkout-btn">Place Order & Send Email</button>
+        </form>
+        <a href="/client">Back to Dashboard</a>
+        <a href="/logout">Logout</a>
+    </div>
+
+    <!-- Flash Messages -->
+    <div id="flash-messages"></div>
+
+    <!-- Include your JavaScript file -->
+    <script>
+        var total_price = {{ total_price }};
+        var cart_products = {{ cart_products | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='email.js') }}"></script>
+</body>
+</html>
