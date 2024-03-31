@@ -7,28 +7,36 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         body {
+            margin: 0;
+            padding: 0;
             display: flex;
-            justify-content: center;
+            justify-content: flex-end;
             align-items: center;
             height: 100vh;
-            margin: 0;
             background-color: #f0f0f0;
         }
+
         .login-form {
+            position: relative;
             width: 300px;
             padding: 20px;
             background-color: #fff;
             border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
             animation: slideIn 0.5s ease;
+            position: absolute;
+            right: 50px;
         }
+
         @keyframes slideIn {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from { transform: translateX(50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
+
         .login-form label {
             font-weight: bold;
         }
+
         .login-form input[type="text"],
         .login-form input[type="password"],
         .login-form input[type="email"] {
@@ -37,7 +45,15 @@
             margin-bottom: 20px;
             border: 1px solid #ccc;
             border-radius: 5px;
+            transition: border-color 0.3s ease;
         }
+
+        .login-form input[type="text"]:focus,
+        .login-form input[type="password"]:focus,
+        .login-form input[type="email"]:focus {
+            border-color: #007bff;
+        }
+
         .login-form button[type="submit"] {
             width: 100%;
             padding: 10px;
@@ -48,9 +64,47 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
+
         .login-form button[type="submit"]:hover {
             background-color: #0056b3;
         }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            animation: fadeIn 0.5s ease;
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .toast-container {
             position: fixed;
             top: 20px;
@@ -58,6 +112,7 @@
             z-index: 9999;
             width: 300px;
         }
+
         .toast-body {
             color: black;
         }
@@ -65,8 +120,8 @@
 </head>
 <body>
     <div class="login-form">
-        <h1>Login</h1>
-        <form action="/" method="POST">
+        <h1 class="mb-4">Login</h1>
+        <form id="login-form" action="/" method="POST">
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" required><br><br>
             <label for="username">Username:</label>
@@ -75,6 +130,9 @@
             <input type="password" id="password" name="password" required><br><br>
             <button type="submit">Login</button>
         </form>
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loading-spinner"></div>
+        </div>
         <p>Don't have an account? <a href="/register">Register</a></p>
     </div>
 
@@ -97,13 +155,11 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-
     <script>
-        var toastElList = [].slice.call(document.querySelectorAll('.toast'))
-        var toastList = toastElList.map(function (toastEl) {
-            return new bootstrap.Toast(toastEl)
+        document.getElementById('login-form').addEventListener('submit', function() {
+            document.getElementById('loading-overlay').style.opacity = '1';
+            document.getElementById('loading-overlay').style.pointerEvents = 'auto';
         });
-        toastList.forEach(toast => toast.show());
     </script>
 </body>
 </html>

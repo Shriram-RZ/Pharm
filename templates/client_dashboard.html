@@ -76,21 +76,33 @@
 </head>
 <body>
     <h1>Welcome, {{ username }}!</h1>
+    <!-- Search bar for products -->
+<form action="/search" method="GET">
+    <input type="text" name="query" placeholder="Search products">
+    <button type="submit">Search</button>
+</form>
+<!-- Product container -->
+<div class="product-container" id="product-container">
+    <!-- Products will be dynamically added here -->
+</div>
+
     
     <h2>Products</h2>
     <div class="product-container">
         {% for product in products %}
-        <div class="product-card">
-            <img src="{{ product.image }}" alt="{{ product.name }}">
-            <div class="product-details">
-                <p class="product-name">{{ product.name }}</p>
-                <p>{{ product.description }}</p>
-                <p class="product-price">${{ product.price }}</p>
-                <form action="/add_to_cart/{{ product._id }}" method="GET">
-                    <button class="cart-btn" type="submit">Add to Cart</button>
-                </form>
-            </div>
-        </div>
+            {% if product %}
+                <div class="product-card">
+                    <img src="{{ product.image }}" alt="{{ product.name }}">
+                    <div class="product-details">
+                        <p class="product-name">{{ product.name }}</p>
+                        <p>{{ product.description }}</p>
+                        <p class="product-price">${{ product.price }}</p>
+                        <form action="/add_to_cart/{{ product._id }}" method="GET">
+                            <button class="cart-btn" type="submit">Add to Cart</button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
         {% endfor %}
     </div>
 
@@ -102,14 +114,52 @@
         <h2>My Cart</h2>
         <ul>
             {% for cart_product in cart_products %}
-            <li>{{ cart_product.name }} - {{ cart_product.description }} - ${{ cart_product.price }}</li>
+                <li>{{ cart_product.name }} - {{ cart_product.description }} - ${{ cart_product.price }}</li>
             {% endfor %}
         </ul>
         <a href="/checkout">Checkout</a> <!-- Checkout link -->
     </div>
+    <h2>Upload Prescription</h2>
+    <form action="/upload_prescription" method="post" enctype="multipart/form-data">
+        <label for="fullname">Full Name:</label>
+        <input type="text" id="fullname" name="fullname" required><br><br>
+        
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required><br><br>
+        
+        <label for="phone">Phone Number:</label>
+        <input type="text" id="phone" name="phone" required><br><br>
+        
+        <label for="prescription">Upload Prescription:</label>
+        <input type="file" id="prescription" name="prescription" accept=".jpg, .jpeg, .png, .pdf" required><br><br>
+        
+        <input type="submit" value="Upload Prescription">
+    </form>
+    
 
     <!-- Your Orders button -->
     <button id="orders-toggle-btn">Your Orders</button>
+    <h2>Prescriptions</h2>
+    <table border="1">
+        <tr>
+            <th>Prescription ID</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Prescription File</th>
+            <th>Action</th>
+        </tr>
+        {% for prescription in prescriptions %}
+        <tr>
+            <td>{{ prescription._id }}</td>
+            <td>{{ prescription.fullname }}</td>
+            <td>{{ prescription.email }}</td>
+            <td>{{ prescription.phone }}</td>
+            <td><a href="{{ prescription.prescription_file }}">Download</a></td>
+            <td><button onclick="sendPrescriptionEmail('{{ prescription._id }}')">Send Email</button></td>
+        </tr>
+        {% endfor %}
+    </table>
 
     <!-- Orders details -->
     <div id="orders-details" class="cart-details">
@@ -139,6 +189,69 @@
     {% endwith %}
 
     <script>
+        document.addEventListener("DOMContentLoaded", function () {
+        // Get product container and search form elements
+        const productContainer = document.getElementById("product-container");
+        const searchForm = document.getElementById("search-form");
+        const searchInput = document.getElementById("search-input");
+
+        // Fetch all products when the page loads
+        fetchProducts("");
+
+        // Add event listener for search form submission
+        searchForm.addEventListener("submit", function (event) {
+            event.preventDefault(); // Prevent form submission
+            const query = searchInput.value.trim(); // Get search query
+            fetchProducts(query); // Fetch products based on the search query
+        });
+
+        // Function to fetch products based on search query
+        function fetchProducts(query) {
+            fetch(`/search?query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear previous products from the container
+                    productContainer.innerHTML = "";
+                    // Add each product to the container
+                    data.forEach(product => {
+                        const productCard = createProductCard(product);
+                        productContainer.appendChild(productCard);
+                    });
+                })
+                .catch(error => console.error("Error fetching products:", error));
+        }
+
+        // Function to create product card HTML element
+        function createProductCard(product) {
+            const productCard = document.createElement("div");
+            productCard.classList.add("product-card");
+            productCard.innerHTML = `
+                <img src="${product.image}" alt="${product.name}">
+                <div class="product-details">
+                    <p class="product-name">${product.name}</p>
+                    <p>${product.description}</p>
+                    <p class="product-price">$${product.price}</p>
+                    <a href="/product/${product._id}" class="product-link">View Product</a>
+                </div>
+            `;
+            return productCard;
+        }
+    });
+         function sendPrescriptionEmail(prescriptionId) {
+            // Send an asynchronous request to send the prescription email
+            fetch(`/send_prescription_email/${prescriptionId}`)
+                .then(response => {
+                    if (response.ok) {
+                        alert("Email sent successfully.");
+                    } else {
+                        alert("Failed to send email.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("An error occurred while sending the email.");
+                });
+        }
         // JavaScript to toggle the visibility of the cart details
         document.getElementById("cart-toggle-btn").addEventListener("click", function() {
             var cartDetails = document.getElementById("cart-details");
@@ -161,3 +274,338 @@
     </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Dashboard</title>
+    <style>
+        /* Your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .product-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        .product-card {
+            width: 300px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .product-card img {
+            width: 100%;
+            border-radius: 8px;
+        }
+        .product-details {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .product-name {
+            font-weight: bold;
+        }
+        .product-price {
+            color: #007bff;
+        }
+        .cart-btn {
+            margin-top: 10px;
+            width: 100%;
+        }
+        /* Style for the cart details */
+        .cart-details {
+            display: none;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        /* Navbar styles */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+        }
+        .navbar-brand {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .navbar-links {
+            display: flex;
+            gap: 20px;
+        }
+        .navbar-links a {
+            color: #fff;
+            text-decoration: none;
+        }
+        .navbar-links a:hover {
+            text-decoration: underline;
+        }
+        .cart-logo {
+            position: relative;
+        }
+        .cart-logo img {
+            width: 30px;
+            height: 30px;
+        }
+        .cart-notification {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 14px;
+        }
+        /* Upload prescription form styles */
+        .upload-prescription-form {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .upload-prescription-form label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .upload-prescription-form input[type="text"],
+        .upload-prescription-form input[type="email"],
+        .upload-prescription-form input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .upload-prescription-form input[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .upload-prescription-form input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        /* Product slider container styles */
+        .product-slider-container {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .product-slider {
+            display: flex;
+            overflow-x: auto;
+            gap: 20px;
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="navbar-brand">Pharmacy</div>
+        <div class="navbar-links">
+            <form id="search-form" action="/search" method="GET">
+                <input id="search-input" type="text" name="query" placeholder="Search products">
+                <button type="submit">Search</button>
+            </form>
+            <a href="/cart" class="cart-logo">
+                <img src="cart-icon.png" alt="Cart">
+                <div class="cart-notification">0</div> <!-- Update this number dynamically -->
+            </a>
+            <a href="/my_orders">My Orders</a>
+            <a href="/my_products">My Products</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </div>
+
+    <!-- Upload prescription form -->
+    <div class="upload-prescription-form">
+        <h2>Upload Prescription</h2>
+        <form action="/upload_prescription" method="post" enctype="multipart/form-data">
+            <label for="fullname">Full Name:</label>
+            <input type="text" id="fullname" name="fullname" required><br>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required><br>
+            <label for="phone">Phone Number:</label>
+            <input type="text" id="phone" name="phone" required><br>
+            <label for="prescription">Upload Prescription:</label>
+            <input type="file" id="prescription" name="prescription" accept=".jpg, .jpeg, .png, .pdf" required><br>
+            <input type="submit" value="Upload Prescription">
+        </form>
+    </div>
+
+    <!-- Product slider container -->
+    <div class="product-slider-container">
+        <h2>Featured Products</h2>
+        <div class="product-slider">
+            <!-- Product cards will be dynamically added here -->
+            <div class="product-card">
+                <img src="product1.jpg" alt="Product 1">
+                <div class="product-details">
+                    <p class="product-name">Product 1</p>
+                    <p class="product-price">$10.00</p>
+                    <button class="cart-btn" type="button">Add to Cart</button>
+                </div>
+            </div>
+            <div class="product-card">
+                <img src="product2.jpg" alt="Product 2">
+                <div class="product-details">
+                    <p class="product-name">Product 2</p>
+                    <p class="product-price">$15.00</p>
+                    <button class="cart-btn" type="button">Add to Cart</button>
+                </div>
+            </div>
+            <!-- Add more product cards here -->
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <!-- Your footer content here -->
+    </footer>
+
+    <!-- JavaScript for updating cart notification count -->
+    <script>
+        // JavaScript code here
+        // Function to fetch cart count
+    function fetchCartCount() {
+        fetch("/cart_count")
+            .then(response => response.json())
+            .then(data => {
+                const cartNotification = document.querySelector('.cart-notification');
+                cartNotification.textContent = data.count;
+            })
+            .catch(error => console.error('Error fetching cart count:', error));
+    }
+
+    // Call fetchCartCount function initially to update the cart count
+    fetchCartCount();
+    document.addEventListener("DOMContentLoaded", function () {
+        // Get product container and search form elements
+        const productContainer = document.getElementById("product-container");
+        const searchForm = document.getElementById("search-form");
+        const searchInput = document.getElementById("search-input");
+
+        // Fetch all products when the page loads
+        fetchProducts("");
+
+        // Add event listener for search form submission
+        searchForm.addEventListener("submit", function (event) {
+            event.preventDefault(); // Prevent form submission
+            const query = searchInput.value.trim(); // Get search query
+            fetchProducts(query); // Fetch products based on the search query
+        });
+
+        // Function to fetch products based on search query
+        function fetchProducts(query) {
+            fetch(`/search?query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear previous products from the container
+                    productContainer.innerHTML = "";
+                    // Add each product to the container
+                    data.forEach(product => {
+                        const productCard = createProductCard(product);
+                        productContainer.appendChild(productCard);
+                    });
+                })
+                .catch(error => console.error("Error fetching products:", error));
+        }
+
+        // Function to create product card HTML element
+        function createProductCard(product) {
+            const productCard = document.createElement("div");
+            productCard.classList.add("product-card");
+            productCard.innerHTML = `
+                <img src="${product.image}" alt="${product.name}">
+                <div class="product-details">
+                    <p class="product-name">${product.name}</p>
+                    <p>${product.description}</p>
+                    <p class="product-price">$${product.price}</p>
+                    <a href="/product/${product._id}" class="product-link">View Product</a>
+                </div>
+            `;
+            return productCard;
+        }
+    });
+         function sendPrescriptionEmail(prescriptionId) {
+            // Send an asynchronous request to send the prescription email
+            fetch(`/send_prescription_email/${prescriptionId}`)
+                .then(response => {
+                    if (response.ok) {
+                        alert("Email sent successfully.");
+                    } else {
+                        alert("Failed to send email.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("An error occurred while sending the email.");
+                });
+        }
+        // JavaScript to toggle the visibility of the cart details
+        document.getElementById("cart-toggle-btn").addEventListener("click", function() {
+            var cartDetails = document.getElementById("cart-details");
+            if (cartDetails.style.display === "none") {
+                cartDetails.style.display = "block";
+            } else {
+                cartDetails.style.display = "none";
+            }
+        });
+
+        // JavaScript to toggle the visibility of the orders details
+        document.getElementById("orders-toggle-btn").addEventListener("click", function() {
+            var ordersDetails = document.getElementById("orders-details");
+            if (ordersDetails.style.display === "none") {
+                ordersDetails.style.display = "block";
+            } else {
+                ordersDetails.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>
+
