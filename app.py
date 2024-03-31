@@ -13,14 +13,14 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = 'shriram73yt@gmail.com'  # Replace with your Gmail address
-app.config['MAIL_PASSWORD'] = 'wchu poqa aift dxfo'  # Replace with your Gmail password
-app.config['MAIL_DEFAULT_SENDER'] = 'shriram73yt@gmail.com'  # Replace with your Gmail address
+app.config['MAIL_USERNAME'] = 'YOUR MAIL ADDRESS'  # Replace with your Gmail address
+app.config['MAIL_PASSWORD'] = 'YOUR APP PASSWORD'  # Replace with your Gmail password
+app.config['MAIL_DEFAULT_SENDER'] = 'YOUR APP PASSWORD'  # Replace with your Gmail address
 
 mail = Mail(app)
 
 # MongoDB setup
-client = MongoClient("mongodb://localhost:27017/pharmacyf")
+client = MongoClient("MONGODB URI")
 db = client["product_db"]
 users_collection = db["users"]
 products_collection = db["products"]
@@ -189,7 +189,7 @@ def send_prescription_email(prescription_id):
     return redirect("/admin")
 
 def send_prescription_email_to_admin(prescription):
-    recipient_email = 'shriram73yt@gmail.com'  # Replace with admin's email address
+    recipient_email = 'YOUR EMAIL ADDRESS'  # Replace with admin's email address
     msg = Message('New Prescription Uploaded', recipients=[recipient_email])
 
     # Render the email body using a template string
